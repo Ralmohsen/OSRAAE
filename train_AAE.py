@@ -257,7 +257,7 @@ def main(folding_id, opennessid, class_fold, folds=5):
             ZD_optimizer.step()
 
             ZDtrain_loss += ZD_train_loss.item()
-            clf.fit(z, y)
+            #clf.fit(z, y)
 
 
             #############################################
