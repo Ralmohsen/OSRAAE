@@ -62,11 +62,25 @@ def extract_batch(data, it, batch_size):
     return Variable(x)
 
 
-def main(folding_id, inliner_classes, total_classes, folds=5):
+def main(folding_id, opennessid, class_fold, folds=5):
     batch_size = 128
     zsize = 32
     mnist_train = []
     mnist_valid = []
+    global fold_id
+    global fake_class_id
+    fold_id = folding_id
+
+    #reading from class_table_fold 0,1,2,3,4
+
+    class_data = json.load(open('class_table_fold_%d.txt' % class_fold))
+
+    train_classes = class_data[0]["train"]
+    inliner_classes = train_classes
+    test_classes = class_data[opennessid]["test_target"]
+
+    openness = 1.0 - math.sqrt(2 * len(train_classes) / (len(train_classes) + len(test_classes)))
+    print("\tOpenness: %f" % openness)
 
     for i in range(folds):
         if i != folding_id:
@@ -76,15 +90,22 @@ def main(folding_id, inliner_classes, total_classes, folds=5):
                 mnist_valid = fold
             mnist_train += fold
 
+    with open('data_fold_%d.pkl' % folding_id, 'rb') as pkl:
+        mnist_test = pickle.load(pkl)
+
+    random.shuffle(mnist_train)
+    random.shuffle(mnist_valid)
+
     outlier_classes = []
-    for i in range(total_classes):
-        if i not in inliner_classes:
-            outlier_classes.append(i)
+    outlier_classes = [x for x in test_classes if x not in inliner_classes]
+
 
     # keep only train classes
     mnist_train = [x for x in mnist_train if x[0] in inliner_classes]
+    #keep only test classes
+    mnist_valid = [x for x in mnist_valid if x[0] in test_classes]
+    mnist_test = [x for x in mnist_test if x[0] in test_classes]
 
-    random.shuffle(mnist_train)
 
     def list_of_pairs_to_numpy(l):
         return np.asarray([x[1] for x in l], np.float32), np.asarray([x[0] for x in l], np.int)
