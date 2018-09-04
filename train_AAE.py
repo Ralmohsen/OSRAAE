@@ -25,6 +25,12 @@ import pickle
 import time
 import random
 import os
+import math
+import json
+from sklearn import svm
+from sklearn.svm import SVC
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.externals import joblib
 
 use_cuda = torch.cuda.is_available()
 
@@ -158,6 +164,8 @@ def main(folding_id, opennessid, class_fold, folds=5):
 
     sample = torch.randn(64, zsize).view(-1, zsize, 1, 1)
 
+    clf = svm.SVC(decision_function_shape='ovr')
+
     for epoch in range(train_epoch):
         G.train()
         D.train()
@@ -187,6 +195,8 @@ def main(folding_id, opennessid, class_fold, folds=5):
 
         for it in range(len(mnist_train_x) // batch_size):
             x = extract_batch(mnist_train_x, it, batch_size).view(-1, 1, 32, 32)
+            y = extract_batch_label(mnist_train_y, it, batch_size)
+
 
             #############################################
 
@@ -247,6 +257,8 @@ def main(folding_id, opennessid, class_fold, folds=5):
             ZD_optimizer.step()
 
             ZDtrain_loss += ZD_train_loss.item()
+            clf.fit(z, y)
+
 
             #############################################
 
@@ -304,5 +316,5 @@ def main(folding_id, opennessid, class_fold, folds=5):
 
 
 if __name__ == '__main__':
-    main(0, [0], 10)
+    main(0, 1, 0)
 
