@@ -61,6 +61,11 @@ def extract_batch(data, it, batch_size):
     # x.sub_(0.5).div_(0.5)
     return Variable(x)
 
+def extract_batch_label(data, it, batch_size):
+    y = numpy2torch(data[it * batch_size:(it + 1) * batch_size])
+    # x.sub_(0.5).div_(0.5)
+    return Variable(y)
+
 
 def main(folding_id, opennessid, class_fold, folds=5):
     batch_size = 128
