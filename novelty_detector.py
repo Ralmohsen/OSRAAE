@@ -32,6 +32,10 @@ import matplotlib.pyplot as plt
 import scipy.stats
 import os
 from sklearn.metrics import roc_auc_score
+from sklearn import svm
+from sklearn.svm import SVC
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.externals import joblib
 
 title_size = 16
 axis_title_size = 14
@@ -110,11 +114,22 @@ def GetF1(true_positive, false_positive, false_negative):
     return 2.0 * precision * recall / (precision + recall)
 
 
-def main(folding_id, inliner_classes, total_classes, folds=5):
+def main(folding_id, opennessid, class_fold, total_classes, folds=5):
     batch_size = 64
     mnist_train = []
     mnist_valid = []
     z_size = 32
+    #define svm
+    clf = svm.SVC(decision_function_shape='ovr')
+
+    class_data = json.load(open('class_table_fold_%d.txt' % class_fold))
+
+    train_classes = class_data[0]["train"]
+    test_classes = class_data[opennessid]["test_target"]
+    inliner_classes = train_classes
+
+
+
 
     def shuffle_in_unison(a, b):
         assert len(a) == len(b)
@@ -127,9 +142,12 @@ def main(folding_id, inliner_classes, total_classes, folds=5):
         return shuffled_a, shuffled_b
 
     outlier_classes = []
-    for i in range(total_classes):
-        if i not in inliner_classes:
-            outlier_classes.append(i)
+    outlier_classes = [x for x in test_classes if x not in inliner_classes]
+
+    #outlier_classes = []
+    #for i in range(total_classes):
+        #if i not in inliner_classes:
+            #outlier_classes.append(i)
 
     for i in range(folds):
         if i != folding_id:
@@ -176,6 +194,8 @@ def main(folding_id, inliner_classes, total_classes, folds=5):
 
         for it in range(len(mnist_train_x) // batch_size):
             x = Variable(extract_batch(mnist_train_x, it, batch_size).view(-1, 32 * 32).data, requires_grad=True)
+            label = extract_batch_(mnist_train_y, it, batch_size)
+
             z = E(x.view(-1, 1, 32, 32))
             recon_batch = G(z)
             z = z.squeeze()
@@ -185,15 +205,20 @@ def main(folding_id, inliner_classes, total_classes, folds=5):
 
             z = z.cpu().detach().numpy()
 
+
+
             for i in range(batch_size):
                 distance = np.sum(np.power(recon_batch[i].flatten() - x[i].flatten(), power))
                 rlist.append(distance)
 
             zlist.append(z)
 
+
         data = {}
         data['rlist'] = rlist
         data['zlist'] = zlist
+        #train SVM on extracyed z
+        clf.fit(z, label)
 
         with open('data.pkl', 'wb') as pkl:
             pickle.dump(data, pkl)
@@ -392,6 +417,7 @@ def main(folding_id, inliner_classes, total_classes, folds=5):
 
             z = z.cpu().detach().numpy()
 
+
             recon_batch = recon_batch.squeeze().cpu().detach().numpy()
             x = x.squeeze().cpu().detach().numpy()
 
@@ -425,6 +451,11 @@ def main(folding_id, inliner_classes, total_classes, folds=5):
                 else:
                     if label[i].item() in inliner_classes:
                         true_positive += 1
+                        tt = z[i,:].reshape(1, -1)
+
+                        svm_label = clf.predict(tt)
+                        print(svm_label)
+                        #exit()
                     else:
                         true_negative += 1
 
@@ -546,4 +577,4 @@ def main(folding_id, inliner_classes, total_classes, folds=5):
     return results
 
 if __name__ == '__main__':
-    main(0, [0], 10)
+    main(0, 1, 0, 10)
