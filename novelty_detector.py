@@ -421,6 +421,9 @@ def main(folding_id, opennessid, class_fold, total_classes, folds=5):
 
             z = z.cpu().detach().numpy()
 
+            # Pass test samples to SVM
+            clf.fit(z, y)
+
 
             recon_batch = recon_batch.squeeze().cpu().detach().numpy()
             x = x.squeeze().cpu().detach().numpy()
