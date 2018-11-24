@@ -195,6 +195,7 @@ def main(folding_id, opennessid, class_fold, total_classes, folds=5):
 
         for it in range(len(mnist_train_x) // batch_size):
             x = Variable(extract_batch(mnist_train_x, it, batch_size).view(-1, 32 * 32).data, requires_grad=True)
+            #extract label batch
             label = extract_batch_(mnist_train_y, it, batch_size)
 
             z = E(x.view(-1, 1, 32, 32))
@@ -218,8 +219,7 @@ def main(folding_id, opennessid, class_fold, total_classes, folds=5):
         data = {}
         data['rlist'] = rlist
         data['zlist'] = zlist
-        #train SVM on extracyed z
-        clf.fit(z, label)
+
 
         with open('data.pkl', 'wb') as pkl:
             pickle.dump(data, pkl)
@@ -305,6 +305,7 @@ def main(folding_id, opennessid, class_fold, total_classes, folds=5):
 
         for it in range(len(mnist_valid_x) // batch_size):
             x = Variable(extract_batch(mnist_valid_x, it, batch_size).view(-1, 32 * 32).data, requires_grad=True)
+            #Extract label batch
             label = extract_batch_(mnist_valid_y, it, batch_size)
 
             z = E(x.view(-1, 1, 32, 32))
@@ -317,6 +318,8 @@ def main(folding_id, opennessid, class_fold, total_classes, folds=5):
 
             recon_batch = recon_batch.squeeze().cpu().detach().numpy()
             x = x.squeeze().cpu().detach().numpy()
+            # train SVM on extracted z
+            clf.fit(z, label)
 
             for i in range(batch_size):
                 u, s, vh = np.linalg.svd(J[i, :, :], full_matrices=False)
