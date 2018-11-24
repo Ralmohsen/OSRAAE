@@ -120,7 +120,7 @@ def main(folding_id, opennessid, class_fold, total_classes, folds=5):
     mnist_train = []
     mnist_valid = []
     z_size = 32
-    #define svm
+    #define svm classifier
     clf = svm.SVC(decision_function_shape='ovr')
 
     class_data = json.load(open('class_table_fold_%d.txt' % class_fold))
