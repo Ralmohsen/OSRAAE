@@ -52,6 +52,7 @@ ticks_size = 18
 
 power = 2.0
 
+clf = svm.SVC(C=100.0)
 
 def process_batch(batch):
     label = [x[0] for x in batch]
@@ -177,37 +178,30 @@ def compute_result(dataset, train_classes, inliner_classes, gennorm_param, bin_e
     rlist, zlist, labellist, result = gpnd(dataset, run_gpnd=True, gennorm_param=gennorm_param, bin_edges=bin_edges,
                                            counts=counts)
 
+    predictions = clf.predict(zlist)
+
+    predictions = np.asarray(predictions)
+    knownlist = np.asarray([label in inliner_classes for label in labellist])
+    labellist = np.asarray(labellist)
+    result = np.asarray(result)
+    correct_class = labellist == predictions
+    novel = np.logical_not(knownlist)
+
     def compute_f1(t):
-        true_positive = 0
-        false_positive = 0
-        false_negative = 0
+        y = np.greater(result, t)
+        not_y = np.logical_not(y)
 
-        known_samples = 0
-        classified_as_known = 0
+        correct = np.logical_or(np.logical_and(y, correct_class), np.logical_and(not_y, novel))
+        not_correct = np.logical_not(correct)
 
-        for i in range(len(dataset)):
-            label = labellist[i]
-            known = label in inliner_classes
+        true_positive = np.sum(correct)
+        false_positive = np.sum(np.logical_and(not_correct, novel))
+        false_negative = np.sum(np.logical_and(not_correct, knownlist))
 
-            #  SVM should predict this
-            predicted_class = 0
+        recall = true_positive / (true_positive + false_negative)
 
-            if result[i] > t:
-                correct = train_classes[predicted_class] == label
-                classified_as_known += 1
-            else:
-                correct = not known
-
-            known_samples += known
-
-            true_positive += known and correct
-            false_positive += (not known) and (not correct)
-            false_negative += known and (not correct)
-
-        recall = true_positive / known_samples#(true_positive + false_negative)
-
-        if classified_as_known > 0:
-            precision = true_positive / classified_as_known#(true_positive + false_positive)
+        if true_positive + false_positive > 0:
+            precision = true_positive / (true_positive + false_positive)
 
             F1 = get_f1(precision, recall)
             return F1
@@ -228,7 +222,7 @@ def compute_result(dataset, train_classes, inliner_classes, gennorm_param, bin_e
 
         print(minP, maxP)
 
-        for e in np.arange(minP, maxP, 10):
+        for e in np.arange(minP, maxP, 0.1):
             f = compute_f1(e)
 
             if f > best_f:
@@ -248,7 +242,6 @@ def main(_folding_id, opennessid, _class_fold, folds=5):
     mnist_train = []
     mnist_valid = []
     #define svm classifier
-    clf = svm.SVC(decision_function_shape='ovr')
 
     global folding_id
     global class_fold
@@ -341,4 +334,4 @@ def main(_folding_id, opennessid, _class_fold, folds=5):
 
 
 if __name__ == '__main__':
-    main(0, 1, 0, 5)
+    main(0, 4, 0, 5)
