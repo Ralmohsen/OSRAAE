@@ -123,31 +123,32 @@ def gpnd(data, run_gpnd=False, gennorm_param=None, bin_edges=0, counts=0):
     result = []
     batches = batch_provider.batch_provider(data, batch_size, process_batch, report_progress=True)
     for x, y in batches:
+        x = Variable(x.data, requires_grad=True)
         z = E(x.view(-1, 1, 32, 32))
         recon_batch = G(z)
         z = z.squeeze()
         recon_batch = recon_batch.squeeze().cpu().detach().numpy()
-        x = x.squeeze().cpu().detach().numpy()
-        z = z.cpu().detach().numpy()
-        for i in range(batch_size):
-            distance = np.sum(np.power(recon_batch[i].flatten() - x[i].flatten(), power))
+        xn = x.squeeze().cpu().detach().numpy()
+
+        distances = []
+        for i in range(x.shape[0]):
+            distance = np.sum(np.power(recon_batch[i].flatten() - xn[i].flatten(), power))
             rlist.append(distance)
-        zlist.append(z)
+            distances.append(distance)
+
+        zlist.append(z.cpu().detach().numpy())
         labellist.append(y)
 
         if run_gpnd:
-            J = compute_jacobian(x, z)
+            #J = compute_jacobian(x, z)
 
-            J = J.cpu().numpy()
+            #J = J.cpu().numpy()
 
             z = z.cpu().detach().numpy()
 
-            recon_batch = recon_batch.squeeze().cpu().detach().numpy()
-            x = x.squeeze().cpu().detach().numpy()
-
-            for i in range(batch_size):
-                u, s, vh = np.linalg.svd(J[i, :, :], full_matrices=False)
-                logD = np.sum(np.log(np.abs(s)))
+            for i in range(x.shape[0]):
+                #u, s, vh = np.linalg.svd(J[i, :, :], full_matrices=False)
+                #logD = np.sum(np.log(np.abs(s)))
 
                 p = scipy.stats.gennorm.pdf(z[i], gennorm_param[0, :], gennorm_param[1, :], gennorm_param[2, :])
                 logPz = np.sum(np.log(p))
@@ -158,27 +159,23 @@ def gpnd(data, run_gpnd=False, gennorm_param=None, bin_edges=0, counts=0):
                 if not np.isfinite(logPz):
                     logPz = -1000
 
-                distance = np.sum(np.power(x[i].flatten() - recon_batch[i].flatten(), power))
+                distance = distances[i]
 
                 logPe = np.log(r_pdf(distance, bin_edges, counts))
                 logPe -= np.log(distance) * (32 * 32 - z_size)
 
-                P = logD + logPz + logPe
+                P = logPz + logPe
 
                 result.append(P)
 
-    rlist = np.concatenate(rlist)
     zlist = np.concatenate(zlist)
     labellist = np.concatenate(labellist)
     return rlist, zlist, labellist, result
 
 
 def compute_result(dataset, train_classes, inliner_classes, gennorm_param, bin_edges, counts, threshhold=None):
-    rlist, zlist, labellist, result = gpnd(dataset,
-                                                      run_gpnd=True,
-                                                      gennorm_param=gennorm_param,
-                                                      bin_edges=bin_edges,
-                                                      counts=counts)
+    rlist, zlist, labellist, result = gpnd(dataset, run_gpnd=True, gennorm_param=gennorm_param, bin_edges=bin_edges,
+                                           counts=counts)
 
     def compute_f1(t):
         true_positive = 0
@@ -337,8 +334,6 @@ def main(_folding_id, opennessid, _class_fold, folds=5):
     plt.cla()
     plt.close()
 
-    zlist = np.concatenate(zlist)
-    labellist = np.concatenate(labellist)
     for i in range(z_size):
         plt.hist(zlist[:, i], bins='auto', histtype='step')
 
@@ -362,7 +357,9 @@ def main(_folding_id, opennessid, _class_fold, folds=5):
         gennorm_param[2, i] = scale
 
     # train SVM on extracted z
+    print("SVM!")
     clf.fit(zlist, labellist)
+    print("SVM Done!")
 
     _, best_th = compute_result(mnist_valid, train_classes, inliner_classes, gennorm_param, bin_edges, counts, threshhold=None)
 
@@ -371,5 +368,6 @@ def main(_folding_id, opennessid, _class_fold, folds=5):
     print("F1: %f" % (F1))
     return F1, best_th
 
+
 if __name__ == '__main__':
-    main(0, 1, 0, 10)
+    main(0, 1, 0, 5)
