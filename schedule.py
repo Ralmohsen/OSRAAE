@@ -5,93 +5,51 @@ import csv
 
 full_run = True
 
-percentages = [10, 20, 30, 40, 50]
 
 def save_results(results):
-    f = open("results.csv", 'wt')
+    f = open("results_OpenSetSVM.csv", 'wt')
     writer = csv.writer(f)
     writer.writerow(('F1',))
-    writer.writerow(('Percentage 10', 'Percentage 20', 'Percentage 30', 'Percentage 40', 'Percentage 50'))
+    writer.writerow(('Opennessid 0', 'Opennessid 1', 'Opennessid 2', 'Opennessid 3', 'Opennessid 4'))
     maxlength = 0
-    for percentage in percentages:
-        list = results[percentage]
-        maxlength = max(maxlength, len(list))
+    for openessid in range(5):
+        list = results[openessid]
+    maxlength = max(maxlength, len(list))
 
     for r in range(maxlength):
         row = []
-        for percentage in percentages:
-            list = results[percentage]
-            res_f1 = [f1 for auc, f1, fpr95, error, auprin, auprout in list]
-            row.append(res_f1[r] if len(list) > r else '')
+        for openessid in range(5):
+            if r < len(results[openessid]):
+                f1, th = results[openessid][r]
+                row.append(f1)
         writer.writerow(tuple(row))
 
-    writer.writerow(('AUC',))
-    writer.writerow(('Percentage 10', 'Percentage 20', 'Percentage 30', 'Percentage 40', 'Percentage 50'))
+    writer.writerow(('Threshold',))
+    writer.writerow(('Opennessid 0', 'Opennessid 1', 'Opennessid 2', 'Opennessid 3', 'Opennessid 4'))
 
     for r in range(maxlength):
         row = []
-        for percentage in percentages:
-            list = results[percentage]
-            res_auc = [auc for auc, f1, fpr95, error, auprin, auprout in list]
-            row.append(res_auc[r] if len(list) > r else '')
+        for openessid in range(5):
+            if r < len(results[openessid]):
+                f1, th = results[openessid][r]
+                row.append(th)
         writer.writerow(tuple(row))
 
-    writer.writerow(('FPR',))
-    writer.writerow(('Percentage 10', 'Percentage 20', 'Percentage 30', 'Percentage 40', 'Percentage 50'))
-
-    for r in range(maxlength):
-        row = []
-        for percentage in percentages:
-            list = results[percentage]
-            res_fpr95 = [fpr95 for auc, f1, fpr95, error, auprin, auprout in list]
-            row.append(res_fpr95[r] if len(list) > r else '')
-        writer.writerow(tuple(row))
-
-    writer.writerow(('error',))
-    writer.writerow(('Percentage 10', 'Percentage 20', 'Percentage 30', 'Percentage 40', 'Percentage 50'))
-
-    for r in range(maxlength):
-        row = []
-        for percentage in percentages:
-            list = results[percentage]
-            res_error = [error for auc, f1, fpr95, error, auprin, auprout in list]
-            row.append(res_error[r] if len(list) > r else '')
-        writer.writerow(tuple(row))
-
-    writer.writerow(('auprin',))
-    writer.writerow(('Percentage 10', 'Percentage 20', 'Percentage 30', 'Percentage 40', 'Percentage 50'))
-
-    for r in range(maxlength):
-        row = []
-        for percentage in percentages:
-            list = results[percentage]
-            res_auprin = [auprin for auc, f1, fpr95, error, auprin, auprout in list]
-            row.append(res_auprin[r] if len(list) > r else '')
-        writer.writerow(tuple(row))
-
-    writer.writerow(('auprout',))
-    writer.writerow(('Percentage 10', 'Percentage 20', 'Percentage 30', 'Percentage 40', 'Percentage 50'))
-
-    for r in range(maxlength):
-        row = []
-        for percentage in percentages:
-            list = results[percentage]
-            res_auprout = [auprout for auc, f1, fpr95, error, auprin, auprout in list]
-            row.append(res_auprout[r] if len(list) > r else '')
-        writer.writerow(tuple(row))
     f.close()
+
 
 results = {}
 
-for percentage in percentages:
-    results[percentage] = []
+for openessid in range(5):
+    results[openessid] = []
 
 for fold in range(5 if full_run else 1):
-    for i in range(10):
-        train_AAE.main(fold, [i], 10)
-        res = novelty_detector.main(fold, [i], 10)
+    for class_fold in range(5):
 
-        for k, v in res.items():
-            results[k].append(v)
+        # Train AAE
+        train_AAE.main(fold, class_fold)
 
-        save_results(results)
+        for openessid in range(5):
+            res = novelty_detector.main(fold, openessid, class_fold)
+            results[openessid] += [res]
+            save_results(results)
