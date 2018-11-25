@@ -217,60 +217,31 @@ def compute_result(dataset, train_classes, inliner_classes, gennorm_param, bin_e
     if not threshhold is None:
         return compute_f1(threshhold), threshhold
     else:
-        best_f1 = 0
-        best_th_l = 0
-        best_th_u = 0
-        best_i_l = 0
-        best_i_u = 0
-        print("Start threshhold search")
-        for i in range(-8000, 8000, 200):
-            threshhold = 1.0 / (1.0 + np.exp(-i / 500.0))
-            f = compute_f1(threshhold)
-            if f > best_f1:
-                best_f1 = f
-                best_th_l = threshhold
-                best_i_l = i
-            if f == best_f1:
-                best_th_u = threshhold
-                best_i_u = i
 
-        mid_i = (best_i_u + best_i_l) // 2
-        print(best_i_u, best_i_l, mid_i)
-        best_f1 = 0
+        minP = min(result) - 1
+        maxP = max(result) + 1
 
-        for i in range(mid_i - 500, mid_i + 500, 10):
-            threshhold = 1.0 / (1.0 + np.exp(-i / 500.0))
-            f = compute_f1(threshhold)
-            if f > best_f1:
-                best_f1 = f
-                best_th_l = threshhold
-                best_i_l = i
-            if f == best_f1:
-                best_th_u = threshhold
-                best_i_u = i
+        best_e = 0
+        best_f = 0
+        best_e_ = 0
+        best_f_ = 0
 
-        mid_i = (best_i_u + best_i_l) // 2
-        print(best_i_u, best_i_l, mid_i)
-        best_f1 = 0
+        print(minP, maxP)
 
-        for i in range(mid_i - 50, mid_i + 50):
-            threshhold = 1.0 / (1.0 + np.exp(-i / 500.0))
-            f = compute_f1(threshhold)
-            if f > best_f1:
-                best_f1 = f
-                best_th_l = threshhold
-                best_i_l = i
-            if f == best_f1:
-                best_th_u = threshhold
-                best_i_u = i
+        for e in np.arange(minP, maxP, 10):
+            f = compute_f1(e)
 
-        mid_i = (best_i_u + best_i_l) // 2
-        print(best_i_u, best_i_l, mid_i)
+            if f > best_f:
+                best_f = f
+                best_e = e
+            if f >= best_f_:
+                best_f_ = f
+                best_e_ = e
 
-        best_th = (best_th_l + best_th_u) / 2.0
+        best_e = (best_e + best_e_) / 2.0
 
-        print("Best threshhold: ", best_th)
-        return best_f1, best_th
+        print("Best e: ", best_e)
+        return best_f_, best_e
 
 
 def main(_folding_id, opennessid, _class_fold, folds=5):
