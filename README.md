@@ -1,5 +1,5 @@
-# OpenSetSVM_new
-OSRAAE
+# OSRAAE
+
 Open-set Recognition with Adversarial Autoencoders
 
 A deep learning approach to solving the problem of open-set recognition, by
