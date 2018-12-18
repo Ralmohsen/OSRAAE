@@ -10,6 +10,5 @@ versus being unknown. If known, the multi-class classifiers assigns the class
 label to the sample.
 
 
-![WiML Poster](http://OSRAAE/images/WiML-2.pdf "WiMl Poster")
-![alt text](http://OSRAAE/images/WiML-2.pdf)
 
+![PDF](images/WiML-2.png?raw=true "PDF")
