@@ -11,4 +11,4 @@ label to the sample.
 
 
 
-![PDF](images/WiML-2.png?raw=true "PDF")
+![PDF](images/WiML-2.pdf?raw=true "PDF")
