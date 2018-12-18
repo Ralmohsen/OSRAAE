@@ -10,3 +10,8 @@ versus being unknown. If known, the multi-class classifiers assigns the class
 label to the sample.
 
 [embed]http://Users/ranyaalmohsen/Downloads/WiML-2.pdf[/embed]
+
+![WiML Poster](/Users/ranyaalmohsen/Downloads/WiML-2.pdf "WiMl Poster")
+
+
+<br><br>
