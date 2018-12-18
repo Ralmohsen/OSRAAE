@@ -12,3 +12,7 @@ label to the sample.
 
 
 ![PDF](images/WiML-2.pdf?raw=true "PDF")
+
+
+![MNIST Reconstruction](images/reconstruction_58.png?raw=true "MNIST Reconstruction")
+
