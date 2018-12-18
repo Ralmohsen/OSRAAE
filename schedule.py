@@ -20,9 +20,23 @@ def save_results(results):
         row = []
         for openessid in range(5):
             if r < len(results[openessid]):
-                f1, th = results[openessid][r]
+                f1, th, auc = results[openessid][r]
+                #f1, th = results[openessid][r]
+
                 row.append(f1)
         writer.writerow(tuple(row))
+
+    writer.writerow(('AUC',))
+    writer.writerow(('Opennessid 0', 'Opennessid 1', 'Opennessid 2', 'Opennessid 3', 'Opennessid 4'))
+
+    for r in range(maxlength):
+        row = []
+        for openessid in range(5):
+            if r < len(results[openessid]):
+                f1, th, auc = results[openessid][r]
+                row.append(auc)
+        writer.writerow(tuple(row))
+
 
     writer.writerow(('Threshold',))
     writer.writerow(('Opennessid 0', 'Opennessid 1', 'Opennessid 2', 'Opennessid 3', 'Opennessid 4'))
@@ -31,7 +45,9 @@ def save_results(results):
         row = []
         for openessid in range(5):
             if r < len(results[openessid]):
-                f1, th = results[openessid][r]
+                f1, th, auc = results[openessid][r]
+                #f1, th = results[openessid][r]
+
                 row.append(th)
         writer.writerow(tuple(row))
 
