@@ -104,15 +104,15 @@ def get_f1(precision, recall):
 
 
 def gpnd(data, run_gpnd=False, gennorm_param=None, bin_edges=0, counts=0):
-    G = Generator(z_size).to(device)
-    E = Encoder(z_size).to(device)
+    G = Generator(z_size, d=64).to(device)
+    E = Encoder(z_size, d=64).to(device)
     setup(E)
     setup(G)
     G.eval()
     E.eval()
 
-    G.load_state_dict(torch.load("Gmodel.pkl"))
-    E.load_state_dict(torch.load("Emodel.pkl"))
+    G.load_state_dict(torch.load("Gmodel_%d_%d.pkl" % (folding_id, class_fold)))
+    E.load_state_dict(torch.load("Emodel_%d_%d.pkl" % (folding_id, class_fold)))
 
     sample = torch.randn(64, z_size).to(device)
     sample = G(sample.view(-1, z_size, 1, 1)).cpu()
@@ -187,7 +187,14 @@ def compute_result(dataset, train_classes, inliner_classes, gennorm_param, bin_e
     correct_class = labellist == predictions
     novel = np.logical_not(knownlist)
 
+    try:
+        auc = roc_auc_score(knownlist, result)
+    except ValueError:
+        auc = 0
+
     def compute_f1(t):
+        # Uncomment line below. Makes everything known. For ablation study
+        #t = -1e16
         y = np.greater(result, t)
         not_y = np.logical_not(y)
 
@@ -209,7 +216,8 @@ def compute_result(dataset, train_classes, inliner_classes, gennorm_param, bin_e
             return 0
 
     if not threshhold is None:
-        return compute_f1(threshhold), threshhold
+        return compute_f1(threshhold), threshhold, auc
+        #return compute_f1(threshhold), threshhold
     else:
 
         minP = min(result) - 1
@@ -235,7 +243,9 @@ def compute_result(dataset, train_classes, inliner_classes, gennorm_param, bin_e
         best_e = (best_e + best_e_) / 2.0
 
         print("Best e: ", best_e)
-        return best_f_, best_e
+        return best_f_, best_e, auc
+        #return best_f_, best_e
+
 
 
 def main(_folding_id, opennessid, _class_fold, folds=5):
@@ -325,12 +335,16 @@ def main(_folding_id, opennessid, _class_fold, folds=5):
     clf.fit(zlist, labellist)
     print("SVM Done!")
 
-    _, best_th = compute_result(mnist_valid, train_classes, inliner_classes, gennorm_param, bin_edges, counts, threshhold=None)
+    _, best_th, _ = compute_result(mnist_valid, train_classes, inliner_classes, gennorm_param, bin_edges, counts, threshhold=None)
+    #_, best_th = compute_result(mnist_valid, train_classes, inliner_classes, gennorm_param, bin_edges, counts, threshhold=None)
 
-    F1, _ = compute_result(mnist_test, train_classes, inliner_classes, gennorm_param, bin_edges, counts, best_th)
+    F1, _, auc = compute_result(mnist_test, train_classes, inliner_classes, gennorm_param, bin_edges, counts, best_th)
+    #F1, _= compute_result(mnist_test, train_classes, inliner_classes, gennorm_param, bin_edges, counts, best_th)
+
 
     print("F1: %f" % (F1))
-    return F1, best_th
+    return F1, best_th, auc
+    #return F1, best_th
 
 
 if __name__ == '__main__':

@@ -73,7 +73,7 @@ def extract_batch_label(data, it, batch_size):
     return Variable(y)
 
 
-def main(folding_id, opennessid, class_fold, folds=5):
+def main(folding_id, class_fold, folds=5):
     batch_size = 128
     zsize = 32
     mnist_train = []
@@ -88,10 +88,11 @@ def main(folding_id, opennessid, class_fold, folds=5):
 
     train_classes = class_data[0]["train"]
     inliner_classes = train_classes
-    test_classes = class_data[opennessid]["test_target"]
 
-    openness = 1.0 - math.sqrt(2 * len(train_classes) / (len(train_classes) + len(test_classes)))
-    print("\tOpenness: %f" % openness)
+    #test_classes = class_data[opennessid]["test_target"]
+
+    #openness = 1.0 - math.sqrt(2 * len(train_classes) / (len(train_classes) + len(test_classes)))
+    #print("\tOpenness: %f" % openness)
 
     for i in range(folds):
         if i != folding_id:
@@ -101,21 +102,24 @@ def main(folding_id, opennessid, class_fold, folds=5):
                 mnist_valid = fold
             mnist_train += fold
 
+
     with open('data_fold_%d.pkl' % folding_id, 'rb') as pkl:
         mnist_test = pickle.load(pkl)
 
     random.shuffle(mnist_train)
     random.shuffle(mnist_valid)
 
-    outlier_classes = []
-    outlier_classes = [x for x in test_classes if x not in inliner_classes]
+    #outlier_classes = []
+    #outlier_classes = [x for x in test_classes if x not in inliner_classes]
 
 
     # keep only train classes
     mnist_train = [x for x in mnist_train if x[0] in inliner_classes]
+
+
     #keep only test classes
-    mnist_valid = [x for x in mnist_valid if x[0] in test_classes]
-    mnist_test = [x for x in mnist_test if x[0] in test_classes]
+    #mnist_valid = [x for x in mnist_valid if x[0] in test_classes]
+   # mnist_test = [x for x in mnist_test if x[0] in test_classes]
 
 
     def list_of_pairs_to_numpy(l):
@@ -125,15 +129,15 @@ def main(folding_id, opennessid, class_fold, folds=5):
 
     mnist_train_x, mnist_train_y = list_of_pairs_to_numpy(mnist_train)
 
-    G = Generator(zsize)
+    G = Generator(zsize, d=64)
     setup(G)
     G.weight_init(mean=0, std=0.02)
 
-    D = Discriminator()
+    D = Discriminator(d=64)
     setup(D)
     D.weight_init(mean=0, std=0.02)
 
-    E = Encoder(zsize)
+    E = Encoder(zsize, d=64)
     setup(E)
     E.weight_init(mean=0, std=0.02)
 
@@ -153,7 +157,7 @@ def main(folding_id, opennessid, class_fold, folds=5):
     GE_optimizer = optim.Adam(list(E.parameters()) + list(G.parameters()), lr=lr, betas=(0.5, 0.999))
     ZD_optimizer = optim.Adam(ZD.parameters(), lr=lr, betas=(0.5, 0.999))
 
-    train_epoch = 80
+    train_epoch = 35
 
     BCE_loss = nn.BCELoss()
     y_real_ = torch.ones(batch_size)
@@ -163,8 +167,6 @@ def main(folding_id, opennessid, class_fold, folds=5):
     y_fake_z = torch.zeros(1 if zd_merge else batch_size)
 
     sample = torch.randn(64, zsize).view(-1, zsize, 1, 1)
-
-    clf = svm.SVC(decision_function_shape='ovr')
 
     for epoch in range(train_epoch):
         G.train()
@@ -195,7 +197,6 @@ def main(folding_id, opennessid, class_fold, folds=5):
 
         for it in range(len(mnist_train_x) // batch_size):
             x = extract_batch(mnist_train_x, it, batch_size).view(-1, 1, 32, 32)
-            y = extract_batch_label(mnist_train_y, it, batch_size)
 
 
             #############################################
@@ -269,7 +270,7 @@ def main(folding_id, opennessid, class_fold, folds=5):
             x_d = G(z)
 
             ZD_result = ZD(z.squeeze()).squeeze()
-            E_loss = BCE_loss(ZD_result, y_real_z) * 2.0
+            E_loss = BCE_loss(ZD_result, y_real_z) * 1.0
 
             Recon_loss = F.binary_cross_entropy(x_d, x)
 
@@ -309,12 +310,12 @@ def main(folding_id, opennessid, class_fold, folds=5):
                        'results' + str(inliner_classes[0]) + '/sample_' + str(epoch) + '.png')
 
     print("Training finish!... save training results")
-    torch.save(G.state_dict(), "Gmodel.pkl")
-    torch.save(E.state_dict(), "Emodel.pkl")
-    torch.save(D.state_dict(), "Dmodel.pkl")
-    torch.save(ZD.state_dict(), "ZDmodel.pkl")
+    torch.save(G.state_dict(), "Gmodel_%d_%d.pkl" % (folding_id, class_fold))
+    torch.save(E.state_dict(), "Emodel_%d_%d.pkl" % (folding_id, class_fold))
+    #torch.save(D.state_dict(), "Dmodel_%d_%d.pkl")
+    #torch.save(ZD.state_dict(), "ZDmodel_%d_%d.pkl")
 
 
 if __name__ == '__main__':
-    main(0, 1, 0)
+    main(0, 0)
 
