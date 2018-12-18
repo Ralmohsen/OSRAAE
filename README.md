@@ -9,9 +9,8 @@ computes the probability of a sample to belong to one of the known classes
 versus being unknown. If known, the multi-class classifiers assigns the class
 label to the sample.
 
-[embed]http://Users/ranyaalmohsen/Downloads/WiML-2.pdf[/embed]
 
-![WiML Poster](/Users/ranyaalmohsen/Downloads/WiML-2.pdf "WiMl Poster")
-
+![WiML Poster](http://Users/ranyaalmohsen/Downloads/WiML-2.pdf "WiMl Poster")
+![alt text](http://Users/ranyaalmohsen/Downloads/WiML-2.pdf)
 
 <br><br>
