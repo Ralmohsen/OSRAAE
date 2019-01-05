@@ -1,3 +1,4 @@
+# Copyright 2018 Ranya Almohsen
 # Copyright 2018 Stanislav Pidhorskyi
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-# Copyright 2018 Ranya Almohsen
 
 from __future__ import print_function
 import torch.utils.data
